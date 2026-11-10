@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Checkout Pattern (Simulasi)</title>
+<style>
+:root{color-scheme:light;--bg:#f4f6fb;--card:#fff;--ink:#1a2233;--mut:#667085;--line:#e4e8f0;--soft:#f8faff;
+--pri:#4f46e5;--pri2:#4338ca;--priBg:#eef0ff;--ok:#067647;--okBg:#e7f7ef;--bad:#b42318;--badBg:#fdecea;--warn:#a15c07;--warnBg:#fff4e0;--sh:0 1px 2px rgba(16,24,40,.05),0 4px 14px rgba(16,24,40,.05)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.banner{background:var(--warnBg);color:var(--warn);text-align:center;padding:7px 12px;font-weight:600;font-size:13px;border-bottom:1px solid #f6dfb4}
+header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:26px 16px 70px}
+.hin{max-width:1120px;margin:0 auto}
+header h1{margin:0;font-size:24px;letter-spacing:-.01em}header p{margin:4px 0 0;opacity:.85;font-size:14px}
+main{max-width:1120px;margin:-50px auto 32px;padding:0 16px;display:grid;gap:16px;grid-template-columns:1.25fr 1fr;align-items:start}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--sh)}
+.wide{grid-column:1/-1}
+h2{font-size:16px;margin:0 0 12px;display:flex;align-items:baseline;gap:8px}
+h2 small{font-weight:500;color:var(--mut);font-size:12px}
+.sub{color:var(--mut);font-size:12.5px}.mono{font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:560px){.stats{grid-template-columns:1fr}}
+.stat span{display:block;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.05em}.stat b{font-size:20px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--soft)}
+td.n,th.n{text-align:right}td.low{color:var(--bad);font-weight:600}.pn{font-weight:600}.empty{text-align:center;color:var(--mut);padding:22px}
+input,select,button{font:inherit;color:inherit}
+input,select{width:100%;padding:9px 11px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;transition:.15s}
+input:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px #4f46e522}
+td input[type=number]{width:74px;text-align:center}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+button{padding:10px 16px;border-radius:9px;border:1px solid var(--pri);background:var(--pri);color:#fff;font-weight:600;cursor:pointer;transition:.15s}
+button:hover:not(:disabled){background:var(--pri2)}button:focus-visible{outline:3px solid #4f46e544;outline-offset:2px}
+button.sec{background:#fff;color:var(--pri)}button.sec:hover:not(:disabled){background:var(--priBg)}
+button.sm{padding:5px 10px;font-size:13px}button:disabled{opacity:.45;cursor:not-allowed}
+#btnOrder{width:100%;padding:12px;font-size:15px;margin-top:14px}
+.sum{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px}
+.sum:empty{display:none}
+.sum div{display:flex;justify-content:space-between;padding:3px 0;color:var(--mut)}
+.sum .tot{font-weight:700;color:var(--ink);font-size:18px;border-top:1px dashed #cfd5e3;margin-top:6px;padding-top:9px}
+.err{color:var(--bad);background:var(--badBg);border-radius:9px;font-size:13px;margin:12px 0 0;padding:9px 12px 9px 28px}.err:empty{display:none}
+.note{color:var(--warn);font-size:13px;margin-top:8px}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600}
+.PAID{background:var(--okBg);color:var(--ok)}.FAILED,.CANCELLED{background:var(--badBg);color:var(--bad)}.PENDING_PAYMENT{background:var(--warnBg);color:var(--warn)}
+.acts{white-space:nowrap;text-align:right}.acts button+button{margin-left:6px}
+.scroll{overflow-x:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:860px){.two{grid-template-columns:1fr}}
+ul.feed{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto;font-size:13px}
+ul.feed li{padding:7px 2px;border-bottom:1px solid var(--line);color:#344054}ul.feed li:last-child{border-bottom:0}
+#toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);background:#1a2233;color:#fff;padding:11px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,40,.25);opacity:0;pointer-events:none;transition:.25s;max-width:90vw}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<!-- <div class="banner">SIMULASI — tidak ada pembayaran sungguhan</div> -->
+<header><div class="hin"><h1>Pemrosesan Pembayaran &amp; Pesanan</h1><p>Demo Creational, Structural, dan Behavioral Design Pattern</p></div></header>
+<main>
+  <section class="card wide">
+    <div class="stats">
+      <div class="stat"><span>Pelanggan</span><b id="cust">demo</b></div>
+      <div class="stat"><span>Poin loyalitas</span><b id="pts">0</b></div>
+      <div class="stat"><span>Penyimpanan</span><b id="store">-</b></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Produk <small>isi jumlah untuk menambah ke pesanan</small></h2>
+    <div class="scroll"><table><thead><tr><th>Produk</th><th class="n">Harga</th><th class="n">Stok</th><th class="n">Jumlah</th></tr></thead><tbody id="products"></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Checkout</h2>
+    <label for="method" style="margin-top:0">Metode pembayaran</label><select id="method"></select>
+    <div class="sub" id="feeDesc" style="margin-top:4px"></div>
+    <label for="voucher">Kode voucher <span class="sub">(HEMAT10 / POTONG5K)</span></label><input id="voucher" maxlength="32" autocomplete="off" placeholder="Opsional">
+    <label for="points">Poin yang dipakai</label><input id="points" type="number" min="0" value="0">
+    <div class="sum" id="sum"></div>
+    <ul class="err" id="errors"></ul>
+    <div class="note" id="notes"></div>
+    <button id="btnOrder" disabled>Buat Pesanan</button>
+  </section>
+
+  <section class="card wide">
+    <h2>Pesanan</h2>
+    <div class="scroll"><table><thead><tr><th>ID</th><th>Status</th><th>Metode</th><th class="n">Total</th><th>Keterangan</th><th></th></tr></thead><tbody id="orders"></tbody></table></div>
+  </section>
+
+  <div class="wide two">
+    <section class="card"><h2>Notifikasi <small>Observer</small></h2><ul class="feed" id="notif"></ul></section>
+    <section class="card"><h2>Log Transaksi <small>Singleton</small></h2><ul class="feed" id="log"></ul></section>
+  </div>
+</main>
+<div id="toast" role="status"></div>
+<script>
+"use strict";
+const rp = n => (n < 0 ? "−" : "") + "Rp" + Math.abs(Number(n)).toLocaleString("id-ID");
+const $ = id => document.getElementById(id);
+const STATUS = { PAID: "Lunas", FAILED: "Gagal", CANCELLED: "Dibatalkan", PENDING_PAYMENT: "Menunggu bayar" };
+let products = [], methods = [], quoteTimer = null, quoteSeq = 0, lastQuote = null;
+
+function el(tag, text, cls) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; }
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 3500); }
+
+async function api(path, opts) {
+  const r = await fetch("/api/" + path, opts);
+  let body = null; try { body = await r.json(); } catch (e) { /* kosong */ }
+  if (!r.ok) { const err = new Error((body && body.error) || ("HTTP " + r.status)); err.details = (body && body.details) || []; throw err; }
+  return body;
+}
+const post = (path, data) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data || {}) });
+
+function buildRequest() {
+  const items = [];
+  document.querySelectorAll("#products input").forEach(i => { const q = parseInt(i.value, 10); if (q > 0) items.push({ code: i.dataset.sku, qty: q }); });
+  const pts = parseInt($("points").value, 10);
+  return { items, method: $("method").value, voucher: $("voucher").value.trim(), points: pts > 0 ? pts : 0 };
+}
+
+function renderProducts() {
+  const tb = $("products"); const keep = {};
+  tb.querySelectorAll("input").forEach(i => keep[i.dataset.sku] = i.value);
+  tb.textContent = "";
+  products.forEach(p => {
+    const tr = el("tr");
+    const nm = el("td"); nm.appendChild(el("div", p.name, "pn")); nm.appendChild(el("div", p.code, "sub mono")); tr.appendChild(nm);
+    tr.appendChild(el("td", rp(p.price), "n"));
+    tr.appendChild(el("td", p.stock, "n" + (p.stock <= 5 ? " low" : "")));
+    const td = el("td", "", "n"); const inp = el("input"); inp.type = "number"; inp.min = 0; inp.max = Math.min(99, p.stock);
+    inp.value = keep[p.code] || 0; inp.dataset.sku = p.code; inp.setAttribute("aria-label", "Jumlah " + p.name);
+    inp.addEventListener("input", scheduleQuote); td.appendChild(inp); tr.appendChild(td); tb.appendChild(tr);
+  });
+}
+
+function scheduleQuote() { clearTimeout(quoteTimer); quoteTimer = setTimeout(requote, 200); }
+
+async function requote() {
+  const seq = ++quoteSeq; const req = buildRequest();
+  const m = methods.find(x => x.code === req.method); $("feeDesc").textContent = m ? m.fee : "";
+  if (req.items.length === 0) { lastQuote = null; renderQuote(null, ["Pilih minimal satu produk."]); return; }
+  try {
+    const q = await post("quote", req);
+    if (seq !== quoteSeq) return;
+    lastQuote = q; renderQuote(q, q.errors || []);
+  } catch (e) { if (seq !== quoteSeq) return; lastQuote = null; renderQuote(null, [e.message].concat(e.details)); }
+}
+
+function renderQuote(q, errors) {
+  const s = $("sum"); s.textContent = "";
+  if (q) {
+    [["Subtotal", q.subtotal], ["Diskon voucher", -q.discount], ["Poin dipakai", -q.pointsUsed], ["Biaya metode", q.fee]].forEach(r => {
+      const d = el("div"); d.appendChild(el("span", r[0])); d.appendChild(el("span", rp(r[1]))); s.appendChild(d);
+    });
+    const t = el("div", "", "tot"); t.appendChild(el("span", "Total")); t.appendChild(el("span", rp(q.total))); s.appendChild(t);
+  }
+  const ul = $("errors"); ul.textContent = ""; errors.forEach(e => ul.appendChild(el("li", e)));
+  $("notes").textContent = q && q.notes ? q.notes.join(" · ") : "";
+  $("btnOrder").disabled = !(q && q.valid);
+}
+
+function renderOrders(list) {
+  const tb = $("orders"); tb.textContent = "";
+  if (!list.length) { const tr = el("tr"); const td = el("td", "Belum ada pesanan.", "empty"); td.colSpan = 6; tr.appendChild(td); tb.appendChild(tr); return; }
+  list.forEach(o => {
+    const tr = el("tr"); tr.appendChild(el("td", o.id, "mono"));
+    const st = el("td"); st.appendChild(el("span", STATUS[o.status] || o.status, "badge " + o.status)); tr.appendChild(st);
+    tr.appendChild(el("td", o.method)); tr.appendChild(el("td", rp(o.total), "n")); tr.appendChild(el("td", o.message || ""));
+    const act = el("td", "", "acts");
+    if (o.status === "PENDING_PAYMENT") {
+      const pay = el("button", "Bayar (Simulasi)", "sm"); pay.addEventListener("click", () => act_(pay, "orders/" + o.id + "/pay"));
+      const can = el("button", "Batalkan", "sm sec"); can.addEventListener("click", () => act_(can, "orders/" + o.id + "/cancel"));
+      act.appendChild(pay); act.appendChild(can);
+    }
+    tr.appendChild(act); tb.appendChild(tr);
+  });
+}
+
+async function act_(btn, path) {
+  btn.disabled = true;
+  try { const o = await post(path); toast("Pesanan " + o.id + ": " + (STATUS[o.status] || o.status)); } catch (e) { toast(e.message); }
+  await refresh(); scheduleQuote();
+}
+
+function renderFeed(id, rows, fmt) {
+  const ul = $(id); ul.textContent = ""; rows.forEach(r => ul.appendChild(el("li", fmt(r))));
+  if (!rows.length) ul.appendChild(el("li", "—"));
+}
+const hhmm = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleTimeString("id-ID"); };
+
+async function refresh() {
+  try {
+    const [p, me, orders, notif, log] = await Promise.all([api("products"), api("me"), api("orders"), api("notifications"), api("log")]);
+    products = p; $("pts").textContent = Number(me.points).toLocaleString("id-ID");
+    renderProducts(); renderOrders(orders);
+    renderFeed("notif", notif, n => hhmm(n.time) + " · " + n.orderId + " · " + n.message);
+    renderFeed("log", log, l => hhmm(l.time) + " · " + l.orderId + " · " + l.event + " · " + rp(l.amount));
+  } catch (e) { toast("Gagal memuat data: " + e.message); }
+}
+
+$("btnOrder").addEventListener("click", async () => {
+  const b = $("btnOrder"); b.disabled = true;
+  try {
+    const o = await post("orders", buildRequest()); toast("Pesanan " + o.id + " dibuat");
+    document.querySelectorAll("#products input").forEach(i => i.value = 0); $("voucher").value = ""; $("points").value = 0;
+  } catch (e) { toast(e.message + (e.details.length ? ": " + e.details.join("; ") : "")); }
+  await refresh(); scheduleQuote();
+});
+["method", "voucher", "points"].forEach(id => $(id).addEventListener("input", scheduleQuote));
+
+(async function init() {
+  try {
+    const [h, m] = await Promise.all([api("health"), api("methods")]);
+    $("store").textContent = h.store; methods = m;
+    m.forEach(x => { const o = el("option", x.name); o.value = x.code; $("method").appendChild(o); });
+  } catch (e) { toast("Server tidak dapat dihubungi"); }
+  await refresh(); scheduleQuote(); setInterval(refresh, 10000);
+})();
+</script>
+</body>
+</html>

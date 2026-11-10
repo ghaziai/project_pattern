@@ -1,0 +1,6 @@
+out/
+.env
+*.class
+out-test/
+sources.txt
+tsources.txt
