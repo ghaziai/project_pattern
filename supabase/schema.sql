@@ -8,6 +8,36 @@ create table if not exists public.products (
   stock integer not null check (stock >= 0)
 );
 
+create or replace function public.add_product_stock(p_code text, p_quantity integer)
+returns jsonb
+language plpgsql
+security invoker
+as $$
+declare
+  updated_product public.products%rowtype;
+begin
+  if p_quantity is null or p_quantity <= 0 then
+    return jsonb_build_object('status', 'invalid_quantity');
+  end if;
+
+  update public.products p
+     set stock = p.stock + p_quantity
+   where p.code = p_code
+     and p.stock::bigint + p_quantity::bigint <= 2147483647
+  returning p.* into updated_product;
+
+  if found then
+    return jsonb_build_object('status', 'ok', 'product', to_jsonb(updated_product));
+  end if;
+  if exists (select 1 from public.products p where p.code = p_code) then
+    return jsonb_build_object('status', 'capacity_exceeded');
+  end if;
+  return jsonb_build_object('status', 'not_found');
+end;
+$$;
+revoke all on function public.add_product_stock(text, integer) from public, anon, authenticated;
+grant execute on function public.add_product_stock(text, integer) to service_role;
+
 create table if not exists public.orders (
   id              text primary key,
   customer        text   not null,

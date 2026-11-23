@@ -2,10 +2,9 @@
 Prasyarat: JDK 17 atau lebih baru (`java -version`).
 
 ```bat
-run.bat         # Windows
-# buka http://localhost:8080
-test.bat        # menjalankan 86 pengujian mandiri
+run.bat
 ```
+Buka http://localhost:8080 di browser.
 
 ## Pemetaan Pattern
 | Kategori | Pattern | Lokasi | Peran |
@@ -26,6 +25,11 @@ test.bat        # menjalankan 86 pengujian mandiri
 
 ## REST API
 `GET /api/health | products | methods | me | orders | orders/{id} | notifications | log`
-`POST /api/quote | orders | orders/{id}/pay | orders/{id}/cancel`
+`POST /api/quote | orders | orders/{id}/pay | orders/{id}/cancel | products/{code}/stock`
 Body: `{"items":[{"code":"SKU-001","qty":2}],"method":"QRIS","voucher":"HEMAT10","points":1000}`
-Kode galat: 400 input salah, 404, 405, 409 status tidak sesuai, 413, 422 pesanan tidak valid, 500, 502 penyimpanan bermasalah.
+Restock memakai `{"quantity":5}` dan menambahkan jumlah tersebut ke stok saat ini. Jumlah harus bilangan bulat positif; produk yang tidak ada menghasilkan 404 dan stok yang melampaui kapasitas menghasilkan 409.
+
+Endpoint restock tidak memiliki autentikasi. Gunakan hanya untuk demo lokal dengan host loopback; jangan publikasikan server ke jaringan.
+Untuk Supabase, jalankan `supabase/schema.sql` agar fungsi RPC restock tersedia.
+
+Kode galat lainnya: 400 input salah, 404, 405, 409 status tidak sesuai, 413, 422 pesanan tidak valid, 500, 502 penyimpanan bermasalah.

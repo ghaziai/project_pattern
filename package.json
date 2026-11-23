@@ -1,0 +1,25 @@
+{
+  "name": "project_pattern",
+  "version": "1.0.0",
+  "description": "Prasyarat: JDK 17 atau lebih baru (`java -version`).",
+  "main": "index.js",
+  "scripts": {
+    "test:e2e": "build.bat && playwright test --project=chromium"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghaziai/project_pattern.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ghaziai/project_pattern/issues"
+  },
+  "homepage": "https://github.com/ghaziai/project_pattern#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.6"
+  }
+}

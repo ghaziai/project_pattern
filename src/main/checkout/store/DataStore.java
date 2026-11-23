@@ -17,6 +17,9 @@ public interface DataStore {
 
     void setStock(String code, int stock);
 
+    /** Menambahkan jumlah positif secara atomik dan mengembalikan produk terbaru. */
+    Product addStock(String code, int quantity);
+
     void saveOrder(Order order);
 
     Optional<Order> order(String id);

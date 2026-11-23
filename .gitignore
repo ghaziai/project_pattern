@@ -1,6 +1,17 @@
 out/
+.agents/
 .env
 *.class
 out-test/
 sources.txt
 tsources.txt
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+anti-slop/

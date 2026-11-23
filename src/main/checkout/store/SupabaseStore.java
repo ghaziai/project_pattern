@@ -80,6 +80,48 @@ public class SupabaseStore implements DataStore {
     }
 
     @Override
+    public Product addStock(String code, int quantity) {
+        if (quantity <= 0) {
+            throw new StockUpdateException(StockUpdateException.Reason.INVALID_QUANTITY,
+                    "Jumlah stok harus lebih dari nol");
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("p_code", code);
+        body.put("p_quantity", quantity);
+        HttpRequest req = request("rpc/add_product_stock", null)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(Json.write(body), StandardCharsets.UTF_8))
+                .build();
+        Object parsed;
+        try {
+            parsed = Json.parse(execute(req).body());
+        } catch (IllegalArgumentException e) {
+            throw new StoreException("Respons restock Supabase bukan JSON valid", e);
+        }
+        if (!(parsed instanceof Map<?, ?>)) {
+            throw new StoreException("Respons restock Supabase bukan objek JSON");
+        }
+        Map<String, Object> result = Json.asObject(parsed);
+        String status = String.valueOf(result.get("status"));
+        return switch (status) {
+            case "ok" -> {
+                Object product = result.get("product");
+                if (!(product instanceof Map<?, ?>)) {
+                    throw new StoreException("Respons restock Supabase tidak berisi produk");
+                }
+                yield toProduct(Json.asObject(product));
+            }
+            case "not_found" -> throw new StockUpdateException(StockUpdateException.Reason.PRODUCT_NOT_FOUND,
+                    "Produk '" + code + "' tidak ditemukan");
+            case "capacity_exceeded" -> throw new StockUpdateException(StockUpdateException.Reason.CAPACITY_EXCEEDED,
+                    "Jumlah stok melampaui batas maksimum");
+            case "invalid_quantity" -> throw new StockUpdateException(StockUpdateException.Reason.INVALID_QUANTITY,
+                    "Jumlah stok harus lebih dari nol");
+            default -> throw new StoreException("Respons restock Supabase tidak dikenal: " + status);
+        };
+    }
+
+    @Override
     public void saveOrder(Order order) {
         send("POST", "orders", "on_conflict=id", order.toRow(),
                 "resolution=merge-duplicates,return=minimal");

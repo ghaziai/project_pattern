@@ -50,6 +50,26 @@ public class InMemoryStore implements DataStore {
     }
 
     @Override
+    public synchronized Product addStock(String code, int quantity) {
+        if (quantity <= 0) {
+            throw new StockUpdateException(StockUpdateException.Reason.INVALID_QUANTITY,
+                    "Jumlah stok harus lebih dari nol");
+        }
+        Product p = products.get(code);
+        if (p == null) {
+            throw new StockUpdateException(StockUpdateException.Reason.PRODUCT_NOT_FOUND,
+                    "Produk '" + code + "' tidak ditemukan");
+        }
+        if (p.stock() > Integer.MAX_VALUE - quantity) {
+            throw new StockUpdateException(StockUpdateException.Reason.CAPACITY_EXCEEDED,
+                    "Jumlah stok melampaui batas maksimum");
+        }
+        Product updated = p.withStock(p.stock() + quantity);
+        products.put(code, updated);
+        return updated;
+    }
+
+    @Override
     public synchronized void saveOrder(Order order) {
         orders.put(order.id, copy(order));
     }
