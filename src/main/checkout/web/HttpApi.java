@@ -105,12 +105,21 @@ public class HttpApi {
                 return new Reply(200, m);
             }
             case "products" -> {
-                requireMethod(ex, method, "GET", seg.length == 1);
-                List<Map<String, Object>> out = new ArrayList<>();
-                for (Product p : ctx.facade.products()) {
-                    out.add(p.toMap());
+                if (seg.length == 1) {
+                    requireMethod(ex, method, "GET", true);
+                    List<Map<String, Object>> out = new ArrayList<>();
+                    for (Product p : ctx.facade.products()) {
+                        out.add(p.toMap());
+                    }
+                    return new Reply(200, out);
                 }
-                return new Reply(200, out);
+                if (seg.length == 3 && seg[2].equals("stock")) {
+                    requireMethod(ex, method, "POST", true);
+                    Map<String, Object> body = Json.asObject(Json.parse(readBody(ex)));
+                    int quantity = stockQuantity(body.get("quantity"));
+                    return new Reply(200, ctx.facade.restock(seg[1], quantity).toMap());
+                }
+                throw new ApiException(404, "Endpoint tidak ditemukan");
             }
             case "methods" -> {
                 requireMethod(ex, method, "GET", seg.length == 1);
@@ -203,6 +212,21 @@ public class HttpApi {
             }
             return new String(data, StandardCharsets.UTF_8);
         }
+    }
+
+    private static int stockQuantity(Object value) {
+        long quantity;
+        if (value instanceof Long l) {
+            quantity = l;
+        } else if (value instanceof Double d && d == Math.rint(d) && Math.abs(d) < 1e15) {
+            quantity = d.longValue();
+        } else {
+            throw new IllegalArgumentException("Field 'quantity' harus berupa bilangan bulat");
+        }
+        if (quantity < Integer.MIN_VALUE || quantity > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Field 'quantity' di luar batas integer");
+        }
+        return (int) quantity;
     }
 
     private static Map<String, Object> error(String message) {

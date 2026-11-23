@@ -11,17 +11,18 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 .banner{background:var(--warnBg);color:var(--warn);text-align:center;padding:7px 12px;font-weight:600;font-size:13px;border-bottom:1px solid #f6dfb4}
-header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:26px 16px 70px}
+header{background:var(--pri);color:#fff;padding:26px 16px 70px}
 .hin{max-width:1120px;margin:0 auto}
 header h1{margin:0;font-size:24px;letter-spacing:-.01em}header p{margin:4px 0 0;opacity:.85;font-size:14px}
-main{max-width:1120px;margin:-50px auto 32px;padding:0 16px;display:grid;gap:16px;grid-template-columns:1.25fr 1fr;align-items:start}
-@media(max-width:860px){main{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--sh)}
+main{max-width:1120px;margin:-50px auto 32px;padding:0 16px;display:grid;gap:16px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:start}
+@media(max-width:860px){main{grid-template-columns:minmax(0,1fr)}}
+.card{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--sh)}
 .wide{grid-column:1/-1}
 h2{font-size:16px;margin:0 0 12px;display:flex;align-items:baseline;gap:8px}
 h2 small{font-weight:500;color:var(--mut);font-size:12px}
 .sub{color:var(--mut);font-size:12.5px}.mono{font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.stats>*{min-width:0}
 @media(max-width:560px){.stats{grid-template-columns:1fr}}
 .stat span{display:block;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.05em}.stat b{font-size:20px}
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -30,13 +31,19 @@ td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}tr
 tbody tr:hover{background:var(--soft)}
 td.n,th.n{text-align:right}td.low{color:var(--bad);font-weight:600}.pn{font-weight:600}.empty{text-align:center;color:var(--mut);padding:22px}
 input,select,button{font:inherit;color:inherit}
-input,select{width:100%;padding:9px 11px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;transition:.15s}
+input,select{width:100%;padding:10px 11px;border:1px solid var(--mut);border-radius:9px;background:#fff;transition:.15s}
+select{cursor:pointer}
+input:hover,select:hover{border-color:var(--ink)}
+input:active,select:active{border-color:var(--pri2)}
 input:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px #4f46e522}
+input:disabled,select:disabled{cursor:not-allowed;opacity:.65}
 td input[type=number]{width:74px;text-align:center}
 label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+label[for]{cursor:pointer}
 button{padding:10px 16px;border-radius:9px;border:1px solid var(--pri);background:var(--pri);color:#fff;font-weight:600;cursor:pointer;transition:.15s}
-button:hover:not(:disabled){background:var(--pri2)}button:focus-visible{outline:3px solid #4f46e544;outline-offset:2px}
+button:hover:not(:disabled){background:var(--pri2)}button:active:not(:disabled){background:#3730a3}button:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
 button.sec{background:#fff;color:var(--pri)}button.sec:hover:not(:disabled){background:var(--priBg)}
+button.sec:active:not(:disabled){background:var(--priBg);border-color:var(--pri2)}
 button.sm{padding:5px 10px;font-size:13px}button:disabled{opacity:.45;cursor:not-allowed}
 #btnOrder{width:100%;padding:12px;font-size:15px;margin-top:14px}
 .sum{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px}
@@ -48,9 +55,18 @@ button.sm{padding:5px 10px;font-size:13px}button:disabled{opacity:.45;cursor:not
 .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600}
 .PAID{background:var(--okBg);color:var(--ok)}.FAILED,.CANCELLED{background:var(--badBg);color:var(--bad)}.PENDING_PAYMENT{background:var(--warnBg);color:var(--warn)}
 .acts{white-space:nowrap;text-align:right}.acts button+button{margin-left:6px}
-.scroll{overflow-x:auto}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:860px){.two{grid-template-columns:1fr}}
+.scroll{min-width:0;overflow-x:auto}
+.restock{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+.restock h3{font-size:14px;margin:0 0 8px}
+.restock-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(100px,.6fr) auto;gap:12px;align-items:end}
+.restock-grid>*{min-width:0}
+.restock-grid label{margin:0 0 5px}
+.restock-grid button{white-space:nowrap}
+#restockStatus{min-height:1.5em;margin:8px 0 0}
+.two{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.two>*{min-width:0}
+@media(max-width:560px){.restock-grid{grid-template-columns:minmax(0,1fr) minmax(0,.7fr)}.restock-grid button{grid-column:1/-1;width:100%}}
+@media(max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
 ul.feed{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto;font-size:13px}
 ul.feed li{padding:7px 2px;border-bottom:1px solid var(--line);color:#344054}ul.feed li:last-child{border-bottom:0}
 #toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);background:#1a2233;color:#fff;padding:11px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,40,.25);opacity:0;pointer-events:none;transition:.25s;max-width:90vw}
@@ -58,7 +74,7 @@ ul.feed li{padding:7px 2px;border-bottom:1px solid var(--line);color:#344054}ul.
 </style>
 </head>
 <body>
-<!-- <div class="banner">SIMULASI — tidak ada pembayaran sungguhan</div> -->
+<div class="banner">Draft tanpa arahan desain. ENERGY 1 / RHYTHM 1 / MOTION 1.</div>
 <header><div class="hin"><h1>Pemrosesan Pembayaran &amp; Pesanan</h1><p>Demo Creational, Structural, dan Behavioral Design Pattern</p></div></header>
 <main>
   <section class="card wide">
@@ -72,6 +88,16 @@ ul.feed li{padding:7px 2px;border-bottom:1px solid var(--line);color:#344054}ul.
   <section class="card">
     <h2>Produk <small>isi jumlah untuk menambah ke pesanan</small></h2>
     <div class="scroll"><table><thead><tr><th>Produk</th><th class="n">Harga</th><th class="n">Stok</th><th class="n">Jumlah</th></tr></thead><tbody id="products"></tbody></table></div>
+    <div class="restock">
+      <h3>Tambah stok</h3>
+      <div class="restock-grid">
+        <div><label for="restockProduct">Produk untuk restock</label><select id="restockProduct"></select></div>
+        <div><label for="restockQty">Jumlah stok masuk</label><input id="restockQty" type="number" min="1" step="1" value="1"></div>
+        <button id="btnRestock" type="button" disabled>Tambah stok</button>
+      </div>
+      <p class="sub">Demo lokal tanpa autentikasi; jangan buka server ke jaringan publik.</p>
+      <p id="restockStatus" class="sub" role="status" aria-live="polite"></p>
+    </div>
   </section>
 
   <section class="card">
@@ -102,7 +128,7 @@ ul.feed li{padding:7px 2px;border-bottom:1px solid var(--line);color:#344054}ul.
 const rp = n => (n < 0 ? "−" : "") + "Rp" + Math.abs(Number(n)).toLocaleString("id-ID");
 const $ = id => document.getElementById(id);
 const STATUS = { PAID: "Lunas", FAILED: "Gagal", CANCELLED: "Dibatalkan", PENDING_PAYMENT: "Menunggu bayar" };
-let products = [], methods = [], quoteTimer = null, quoteSeq = 0, lastQuote = null;
+let products = [], methods = [], quoteTimer = null, quoteSeq = 0, lastQuote = null, dataLoaded = false;
 
 function el(tag, text, cls) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; }
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 3500); }
@@ -122,19 +148,56 @@ function buildRequest() {
   return { items, method: $("method").value, voucher: $("voucher").value.trim(), points: pts > 0 ? pts : 0 };
 }
 
+function renderTableState(id, message, columns) {
+  const body = $(id); body.textContent = "";
+  const row = el("tr"); const cell = el("td", message, "empty"); cell.colSpan = columns;
+  row.appendChild(cell); body.appendChild(row);
+}
+
+function renderFeedState(id, message) {
+  const list = $(id); list.textContent = ""; list.appendChild(el("li", message));
+}
+
+function renderLoadingState() {
+  $("pts").textContent = "Memuat...";
+  $("store").textContent = "Memuat...";
+  renderTableState("products", "Memuat produk...", 4);
+  renderTableState("orders", "Memuat pesanan...", 6);
+  renderFeedState("notif", "Memuat notifikasi...");
+  renderFeedState("log", "Memuat log transaksi...");
+}
+
+function renderDataErrorState() {
+  $("pts").textContent = "Tidak tersedia";
+  renderTableState("products", "Produk gagal dimuat. Periksa server, lalu muat ulang halaman.", 4);
+  renderTableState("orders", "Pesanan gagal dimuat. Periksa server, lalu muat ulang halaman.", 6);
+  renderFeedState("notif", "Notifikasi gagal dimuat. Periksa server, lalu muat ulang halaman.");
+  renderFeedState("log", "Log transaksi gagal dimuat. Periksa server, lalu muat ulang halaman.");
+}
+
 function renderProducts() {
   const tb = $("products"); const keep = {};
   tb.querySelectorAll("input").forEach(i => keep[i.dataset.sku] = i.value);
   tb.textContent = "";
+  if (!products.length) renderTableState("products", "Belum ada produk.", 4);
+  else products.forEach(p => {
+      const tr = el("tr");
+      const nm = el("td"); nm.appendChild(el("div", p.name, "pn")); nm.appendChild(el("div", p.code, "sub mono")); tr.appendChild(nm);
+      tr.appendChild(el("td", rp(p.price), "n"));
+      tr.appendChild(el("td", p.stock, "n" + (p.stock <= 5 ? " low" : "")));
+      const td = el("td", "", "n"); const inp = el("input"); inp.type = "number"; inp.min = 0; inp.max = Math.min(99, p.stock);
+      inp.value = keep[p.code] || 0; inp.dataset.sku = p.code; inp.setAttribute("aria-label", "Jumlah " + p.name);
+      inp.addEventListener("input", scheduleQuote); td.appendChild(inp); tr.appendChild(td); tb.appendChild(tr);
+    });
+  const select = $("restockProduct"); const selected = select.value;
+  select.textContent = "";
   products.forEach(p => {
-    const tr = el("tr");
-    const nm = el("td"); nm.appendChild(el("div", p.name, "pn")); nm.appendChild(el("div", p.code, "sub mono")); tr.appendChild(nm);
-    tr.appendChild(el("td", rp(p.price), "n"));
-    tr.appendChild(el("td", p.stock, "n" + (p.stock <= 5 ? " low" : "")));
-    const td = el("td", "", "n"); const inp = el("input"); inp.type = "number"; inp.min = 0; inp.max = Math.min(99, p.stock);
-    inp.value = keep[p.code] || 0; inp.dataset.sku = p.code; inp.setAttribute("aria-label", "Jumlah " + p.name);
-    inp.addEventListener("input", scheduleQuote); td.appendChild(inp); tr.appendChild(td); tb.appendChild(tr);
+    const option = el("option", p.name + " (" + p.code + ")");
+    option.value = p.code; select.appendChild(option);
   });
+  if (products.some(p => p.code === selected)) select.value = selected;
+  select.disabled = products.length === 0;
+  $("btnRestock").disabled = products.length === 0;
 }
 
 function scheduleQuote() { clearTimeout(quoteTimer); quoteTimer = setTimeout(requote, 200); }
@@ -165,7 +228,7 @@ function renderQuote(q, errors) {
 
 function renderOrders(list) {
   const tb = $("orders"); tb.textContent = "";
-  if (!list.length) { const tr = el("tr"); const td = el("td", "Belum ada pesanan.", "empty"); td.colSpan = 6; tr.appendChild(td); tb.appendChild(tr); return; }
+  if (!list.length) { renderTableState("orders", "Belum ada pesanan.", 6); return; }
   list.forEach(o => {
     const tr = el("tr"); tr.appendChild(el("td", o.id, "mono"));
     const st = el("td"); st.appendChild(el("span", STATUS[o.status] || o.status, "badge " + o.status)); tr.appendChild(st);
@@ -187,19 +250,24 @@ async function act_(btn, path) {
 }
 
 function renderFeed(id, rows, fmt) {
+  const emptyMessage = id === "notif" ? "Belum ada notifikasi." : "Belum ada log transaksi.";
+  if (!rows.length) { renderFeedState(id, emptyMessage); return; }
   const ul = $(id); ul.textContent = ""; rows.forEach(r => ul.appendChild(el("li", fmt(r))));
-  if (!rows.length) ul.appendChild(el("li", "—"));
 }
 const hhmm = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleTimeString("id-ID"); };
 
 async function refresh() {
   try {
     const [p, me, orders, notif, log] = await Promise.all([api("products"), api("me"), api("orders"), api("notifications"), api("log")]);
+    dataLoaded = true;
     products = p; $("pts").textContent = Number(me.points).toLocaleString("id-ID");
     renderProducts(); renderOrders(orders);
     renderFeed("notif", notif, n => hhmm(n.time) + " · " + n.orderId + " · " + n.message);
     renderFeed("log", log, l => hhmm(l.time) + " · " + l.orderId + " · " + l.event + " · " + rp(l.amount));
-  } catch (e) { toast("Gagal memuat data: " + e.message); }
+  } catch (e) {
+    if (!dataLoaded) renderDataErrorState();
+    toast("Gagal memuat data. Periksa server, lalu muat ulang halaman. " + e.message);
+  }
 }
 
 $("btnOrder").addEventListener("click", async () => {
@@ -210,14 +278,37 @@ $("btnOrder").addEventListener("click", async () => {
   } catch (e) { toast(e.message + (e.details.length ? ": " + e.details.join("; ") : "")); }
   await refresh(); scheduleQuote();
 });
+ $("btnRestock").addEventListener("click", async () => {
+  const button = $("btnRestock"); const quantity = Number($("restockQty").value);
+  const status = $("restockStatus"); status.textContent = "";
+  if (!Number.isSafeInteger(quantity) || quantity < 1) {
+    status.textContent = "Jumlah stok harus berupa bilangan bulat lebih dari nol.";
+    return;
+  }
+  button.disabled = true;
+  try {
+    const code = $("restockProduct").value;
+    const product = await post("products/" + encodeURIComponent(code) + "/stock", { quantity });
+    status.textContent = "Stok berhasil ditambahkan: " + product.name + " (+" + quantity + ", total " + product.stock + ").";
+    await refresh();
+  } catch (e) {
+    status.textContent = "Gagal menambah stok: " + e.message;
+  } finally {
+    button.disabled = false;
+  }
+});
 ["method", "voucher", "points"].forEach(id => $(id).addEventListener("input", scheduleQuote));
 
 (async function init() {
+  renderLoadingState();
   try {
     const [h, m] = await Promise.all([api("health"), api("methods")]);
     $("store").textContent = h.store; methods = m;
     m.forEach(x => { const o = el("option", x.name); o.value = x.code; $("method").appendChild(o); });
-  } catch (e) { toast("Server tidak dapat dihubungi"); }
+  } catch (e) {
+    $("store").textContent = "Tidak tersedia";
+    toast("Server tidak dapat dihubungi. Periksa server, lalu muat ulang halaman.");
+  }
   await refresh(); scheduleQuote(); setInterval(refresh, 10000);
 })();
 </script>

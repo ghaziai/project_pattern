@@ -11,6 +11,7 @@ import checkout.payment.PaymentGateways;
 import checkout.singleton.TransactionLog;
 import checkout.store.DataStore;
 import checkout.store.InMemoryStore;
+import checkout.store.StockUpdateException;
 import checkout.store.StoreException;
 import checkout.store.SupabaseStore;
 import checkout.util.Json;
@@ -58,11 +59,49 @@ public class SelfTest {
         return new AppContext(new InMemoryStore());
     }
 
+    static void testStockAddition() throws Exception {
+        System.out.println("# Stock restocking");
+        InMemoryStore store = new InMemoryStore();
+        check("restock menambahkan delta ke stok saat ini", store.addStock("SKU-001", 3).stock() == 23);
+
+        boolean invalid = false;
+        try { store.addStock("SKU-001", 0); }
+        catch (StockUpdateException e) { invalid = e.reason() == StockUpdateException.Reason.INVALID_QUANTITY; }
+        check("jumlah restock nol ditolak", invalid);
+
+        invalid = false;
+        try { store.addStock("SKU-001", -1); }
+        catch (StockUpdateException e) { invalid = e.reason() == StockUpdateException.Reason.INVALID_QUANTITY; }
+        check("jumlah restock negatif ditolak", invalid);
+
+        boolean missing = false;
+        try { store.addStock("SKU-MISSING", 1); }
+        catch (StockUpdateException e) { missing = e.reason() == StockUpdateException.Reason.PRODUCT_NOT_FOUND; }
+        check("restock produk tak dikenal ditolak", missing);
+
+        boolean overflow = false;
+        try { store.addStock("SKU-001", Integer.MAX_VALUE); }
+        catch (StockUpdateException e) { overflow = e.reason() == StockUpdateException.Reason.CAPACITY_EXCEEDED; }
+        check("restock melampaui kapasitas integer ditolak", overflow);
+
+        ExecutorService pool = Executors.newFixedThreadPool(8);
+        List<Future<?>> tasks = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            tasks.add(pool.submit(() -> {
+                for (int j = 0; j < 50; j++) store.addStock("SKU-002", 1);
+            }));
+        }
+        for (Future<?> task : tasks) task.get();
+        pool.shutdownNow();
+        check("restock bersamaan tidak kehilangan pembaruan", store.product("SKU-002").orElseThrow().stock() == 405);
+    }
+
     public static void main(String[] args) throws Exception {
         testJson();
         testPayments();
         testMediator();
         testFacadeFlows();
+        testStockAddition();
         testConcurrency();
         testObserverIsolation();
         testSupabaseMock();
@@ -253,6 +292,7 @@ public class SelfTest {
         long serial = 0;
         HttpServer server;
         volatile boolean fail = false;
+        volatile boolean malformedRestock = false;
         volatile String lastKey = "";
 
         MockPostgrest() throws Exception {
@@ -272,7 +312,31 @@ public class SelfTest {
                             List<Map<String, Object>> rows = tables.get(table);
                             String m = ex.getRequestMethod();
                             String reqBody = new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-                            if (rows == null) { status = 404; out = "{}".getBytes(); }
+                            if (table.equals("rpc/add_product_stock") && m.equals("POST")) {
+                                if (malformedRestock) {
+                                    out = "not-json".getBytes(StandardCharsets.UTF_8);
+                                } else {
+                                    Map<String, Object> args = Json.asObject(Json.parse(reqBody));
+                                    String code = String.valueOf(args.get("p_code"));
+                                    int quantity = (int) Order.num(args.get("p_quantity"));
+                                    Map<String, Object> result = new LinkedHashMap<>();
+                                    if (quantity <= 0) {
+                                        result.put("status", "invalid_quantity");
+                                    } else {
+                                        Map<String, Object> product = rowsForProduct(code);
+                                        if (product == null) {
+                                            result.put("status", "not_found");
+                                        } else if ((long) Order.num(product.get("stock")) + quantity > Integer.MAX_VALUE) {
+                                            result.put("status", "capacity_exceeded");
+                                        } else {
+                                            product.put("stock", Order.num(product.get("stock")) + quantity);
+                                            result.put("status", "ok");
+                                            result.put("product", product);
+                                        }
+                                    }
+                                    out = Json.write(result).getBytes(StandardCharsets.UTF_8);
+                                }
+                            } else if (rows == null) { status = 404; out = "{}".getBytes(); }
                             else if (m.equals("GET")) {
                                 List<Map<String, Object>> res = filter(rows, q);
                                 String ord = q.get("order");
@@ -314,6 +378,13 @@ public class SelfTest {
             server.start();
         }
 
+        Map<String, Object> rowsForProduct(String code) {
+            for (Map<String, Object> product : tables.get("products")) {
+                if (Objects.equals(product.get("code"), code)) return product;
+            }
+            return null;
+        }
+
         static int cmpv(Object a, Object b) {
             if (a instanceof Number x && b instanceof Number y) return Double.compare(x.doubleValue(), y.doubleValue());
             return String.valueOf(a).compareTo(String.valueOf(b));
@@ -353,6 +424,27 @@ public class SelfTest {
         check("seed 5 produk (idempoten)", s.products().size() == 5 && mock.tables.get("products").size() == 5);
         check("poin awal 20.000", s.points("demo") == 20_000);
         check("header apikey/Authorization terkirim", mock.lastKey.equals("kunci-uji"));
+        check("restock Supabase menambah delta", s.addStock("SKU-002", 2).stock() == 7);
+        boolean invalidRestock = false;
+        try { s.addStock("SKU-002", 0); }
+        catch (StockUpdateException e) { invalidRestock = e.reason() == StockUpdateException.Reason.INVALID_QUANTITY; }
+        check("restock Supabase menolak jumlah nol", invalidRestock);
+        boolean missingProduct = false;
+        try { s.addStock("SKU-MISSING", 1); }
+        catch (StockUpdateException e) { missingProduct = e.reason() == StockUpdateException.Reason.PRODUCT_NOT_FOUND; }
+        check("restock Supabase menolak produk tak dikenal", missingProduct);
+        s.setStock("SKU-002", Integer.MAX_VALUE);
+        boolean stockOverflow = false;
+        try { s.addStock("SKU-002", 1); }
+        catch (StockUpdateException e) { stockOverflow = e.reason() == StockUpdateException.Reason.CAPACITY_EXCEEDED; }
+        check("restock Supabase menolak overflow", stockOverflow);
+        s.setStock("SKU-002", 5);
+        mock.malformedRestock = true;
+        boolean malformedResponse = false;
+        try { s.addStock("SKU-002", 1); }
+        catch (StoreException e) { malformedResponse = true; }
+        check("respons RPC restock rusak dilaporkan sebagai StoreException", malformedResponse);
+        mock.malformedRestock = false;
         AppContext c = new AppContext(s);
         Order o = c.facade.checkout(req(body("VA", "POTONG5K", 1_000, "SKU-002", "2")));
         check("stok tersimpan di Supabase (5->3)", s.product("SKU-002").get().stock() == 3);
@@ -378,7 +470,8 @@ public class SelfTest {
     // -------------------------------------------------------------------- HTTP
     static void testHttp() throws Exception {
         System.out.println("# REST API");
-        HttpApi api = new HttpApi(fresh());
+        AppContext context = fresh();
+        HttpApi api = new HttpApi(context);
         api.start("127.0.0.1", 0);
         String base = "http://127.0.0.1:" + api.port();
         HttpClient http = HttpClient.newHttpClient();
@@ -386,7 +479,37 @@ public class SelfTest {
             check("GET /api/health", call(http, "GET", base + "/api/health", null).status == 200);
             R r = call(http, "GET", base + "/api/products", null);
             check("GET /api/products 5 item", r.status == 200 && ((List<?>) Json.parse(r.body)).size() == 5);
-            check("GET / menyajikan UI", call(http, "GET", base + "/", null).body.contains("SIMULASI"));
+            r = call(http, "POST", base + "/api/products/SKU-001/stock", "{\"quantity\":3}");
+            check("POST restock menambah delta dan mengembalikan produk", r.status == 200
+                    && Order.num(Json.asObject(Json.parse(r.body)).get("stock")) == 23);
+            check("restock jumlah nol -> 400",
+                    call(http, "POST", base + "/api/products/SKU-001/stock", "{\"quantity\":0}").status == 400);
+            check("restock jumlah negatif -> 400",
+                    call(http, "POST", base + "/api/products/SKU-001/stock", "{\"quantity\":-1}").status == 400);
+            check("restock jumlah pecahan -> 400",
+                    call(http, "POST", base + "/api/products/SKU-001/stock", "{\"quantity\":1.5}").status == 400);
+            check("restock jumlah hilang -> 400",
+                    call(http, "POST", base + "/api/products/SKU-001/stock", "{}").status == 400);
+            check("restock produk tak dikenal -> 404",
+                    call(http, "POST", base + "/api/products/UNKNOWN/stock", "{\"quantity\":1}").status == 404);
+            context.store.setStock("SKU-001", Integer.MAX_VALUE);
+            check("restock overflow -> 409",
+                    call(http, "POST", base + "/api/products/SKU-001/stock", "{\"quantity\":1}").status == 409);
+            context.store.setStock("SKU-001", 20);
+            check("GET restock path -> 405",
+                    call(http, "GET", base + "/api/products/SKU-001/stock", null).status == 405);
+            context.store.setStock("SKU-005", 0);
+            check("order tanpa stok -> 422 sebelum restock",
+                    call(http, "POST", base + "/api/orders", body("QRIS", "", 0, "SKU-005", "1")).status == 422);
+            r = call(http, "POST", base + "/api/products/SKU-005/stock", "{\"quantity\":1}");
+            check("restock mengaktifkan produk yang sebelumnya kehabisan stok",
+                    r.status == 200 && Order.num(Json.asObject(Json.parse(r.body)).get("stock")) == 1);
+            r = call(http, "POST", base + "/api/orders", body("QRIS", "", 0, "SKU-005", "1"));
+            String restockedOrderId = (String) Json.asObject(Json.parse(r.body)).get("id");
+            check("produk hasil restock dapat dipesan", r.status == 201
+                    && call(http, "POST", base + "/api/orders/" + restockedOrderId + "/cancel", "").status == 200);
+            context.store.setStock("SKU-005", 8);
+            check("GET / menyajikan UI", call(http, "GET", base + "/", null).body.contains("Draft tanpa arahan desain"));
             check("GET /api/me", call(http, "GET", base + "/api/me", null).body.contains("20000"));
             r = call(http, "POST", base + "/api/quote", body("QRIS", "", 0, "SKU-001", "1"));
             check("POST /api/quote 200", r.status == 200 && r.body.contains("\"valid\":true"));

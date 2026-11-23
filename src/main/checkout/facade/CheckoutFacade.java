@@ -12,6 +12,7 @@ import checkout.payment.PaymentGateway;
 import checkout.payment.PaymentGateways;
 import checkout.payment.PaymentResult;
 import checkout.store.DataStore;
+import checkout.store.StockUpdateException;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,6 +35,21 @@ public class CheckoutFacade {
 
     public List<Product> products() {
         return store.products();
+    }
+
+    public Product restock(String code, int quantity) {
+        synchronized (lock) {
+            try {
+                return store.addStock(code, quantity);
+            } catch (StockUpdateException e) {
+                int status = switch (e.reason()) {
+                    case INVALID_QUANTITY -> 400;
+                    case PRODUCT_NOT_FOUND -> 404;
+                    case CAPACITY_EXCEEDED -> 409;
+                };
+                throw new ApiException(status, e.getMessage());
+            }
+        }
     }
 
     public long points() {
